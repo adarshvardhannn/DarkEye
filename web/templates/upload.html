@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DarkEye — A Reverse Image Investigation Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #08060e;
+      --bg-deep: #0c0817;
+      --bg-card: rgba(18, 12, 31, 0.7);
+      --bg-card-hover: rgba(28, 19, 48, 0.85);
+      --bg-input: #100b20;
+      
+      --purple-neon: #a855f7;
+      --purple-bright: #c084fc;
+      --purple-main: #8b5cf6;
+      --purple-dark: #6d28d9;
+      --purple-glow: rgba(168, 85, 247, 0.35);
+
+      --emerald-neon: #10b981;
+      --cyan-neon: #38bdf8;
+      --amber-neon: #f59e0b;
+      --rose-neon: #f43f5e;
+
+      --text-white: #ffffff;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --border-subtle: rgba(168, 85, 247, 0.18);
+      --border-active: rgba(168, 85, 247, 0.55);
+
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ZERO SCROLLING ENFORCED */
+    html, body {
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-sans);
+      background-color: var(--bg-dark);
+      color: var(--text-white);
+      position: relative;
+    }
+
+    /* Ambient Cyber Background Gradients */
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-glow-top {
+      position: absolute;
+      top: -150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 450px;
+      background: radial-gradient(ellipse, rgba(139, 92, 246, 0.16) 0%, transparent 70%);
+      filter: blur(40px);
+    }
+
+    .bg-glow-bottom {
+      position: absolute;
+      bottom: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1100px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(168, 85, 247, 0.18) 0%, transparent 70%);
+      filter: blur(50px);
+    }
+
+    .bg-glow-right {
+      position: absolute;
+      top: 15%;
+      right: -100px;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
+      filter: blur(60px);
+    }
+
+    .bg-horizon-arc {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 150px;
+      background: radial-gradient(ellipse 90% 100% at 50% 100%, rgba(168, 85, 247, 0.14) 0%, transparent 80%);
+      border-top: 1px solid rgba(168, 85, 247, 0.12);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* MAIN SINGLE SCREEN CONTAINER */
+    .main-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1240px;
+      height: 100vh;
+      max-height: 100vh;
+      margin: 0 auto;
+      padding: 20px 28px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    /* Floating Toast Alerts */
+    .alerts-wrap {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 420px;
+    }
+
+    .alert {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      animation: toast-slide 0.25s ease-out;
+    }
+
+    @keyframes toast-slide {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .alert-success {
+      background: rgba(16, 185, 129, 0.95);
+      color: #fff;
+    }
+
+    .alert-warning {
+      background: rgba(245, 158, 11, 0.95);
+      color: #fff;
+    }
+
+    .alert-error {
+      background: rgba(244, 63, 94, 0.95);
+      color: #fff;
+    }
+
+    .alert-info {
+      background: rgba(124, 58, 237, 0.95);
+      color: #fff;
+    }
+
+    /* ================================================= */
+    /* HERO CONTAINER (FITS VIEWPORT)                    */
+    /* ================================================= */
+    .hero-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 36px;
+      align-items: center;
+      min-height: 0;
+      margin-bottom: 12px;
+    }
+
+    /* Hero Left Details */
+    .hero-left {
+      padding-right: 8px;
+    }
+
+    .brand-bracket-wrap {
+      display: inline-block;
+      position: relative;
+      padding: 6px 14px;
+      margin-bottom: 8px;
+    }
+
+    .brand-bracket-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 18px;
+      height: 18px;
+      border-top: 3px solid var(--purple-bright);
+      border-left: 3px solid var(--purple-bright);
+      border-top-left-radius: 5px;
+    }
+
+    .brand-bracket-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 18px;
+      height: 18px;
+      border-bottom: 3px solid var(--purple-bright);
+      border-right: 3px solid var(--purple-bright);
+      border-bottom-right-radius: 5px;
+    }
+
+    .hero-main-title {
+      font-size: clamp(38px, 4.4vw, 50px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      color: #ffffff;
+      line-height: 1;
+      text-shadow: 0 0 25px rgba(168, 85, 247, 0.35);
+    }
+
+    .hero-tagline {
+      font-size: clamp(18px, 2vw, 22px);
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 12px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .hero-tagline::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 42px;
+      height: 3px;
+      background: var(--purple-neon);
+      border-radius: 2px;
+    }
+
+    .hero-description {
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+      max-width: 480px;
+    }
+
+    /* 4 Feature Highlights Quad */
+    .features-quad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .feature-item {
+      text-align: center;
+      padding: 6px 4px;
+    }
+
+    .feature-icon-circle {
+      width: 34px;
+      height: 34px;
+      margin: 0 auto 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--purple-bright);
+    }
+
+    .feature-icon-circle svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .feature-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #e5e7eb;
+      line-height: 1.25;
+    }
+
+    /* Hero CTA Button Bar */
+    .hero-buttons {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-hero-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 22px;
+      border-radius: 26px;
+      background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+      color: #fff;
+      font-size: 13.5px;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .btn-hero-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(124, 58, 237, 0.55);
+    }
+
+    .btn-hero-primary svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+    }
+
+    .btn-hero-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 20px;
+      border-radius: 26px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 13.5px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-hero-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-hero-secondary svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor;
+    }
+
+    /* ================================================= */
+    /* HERO RIGHT - UPLOAD TERMINAL CARD                 */
+    /* ================================================= */
+    .hero-right {
+      position: relative;
+    }
+
+    .terminal-outer-card {
+      background: rgba(14, 10, 24, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      border-radius: 20px;
+      padding: 18px 20px;
+      box-shadow: 0 16px 45px -10px rgba(0, 0, 0, 0.7), 0 0 30px rgba(168, 85, 247, 0.12);
+      position: relative;
+    }
+
+    /* Mode Pill Switcher */
+    .terminal-mode-switch {
+      display: flex;
+      background: rgba(20, 14, 34, 0.9);
+      padding: 3px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 12px;
+      gap: 3px;
+    }
+
+    .term-mode-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .term-mode-tab svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .term-mode-tab.active {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(124, 58, 237, 0.18));
+      color: var(--purple-bright);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.15);
+    }
+
+    /* Dashed Dropzone */
+    .dropzone-box {
+      border: 2px dashed rgba(168, 85, 247, 0.45);
+      border-radius: 14px;
+      background: rgba(18, 12, 31, 0.5);
+      padding: 22px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .dropzone-box:hover, .dropzone-box.dragover {
+      border-color: var(--purple-neon);
+      background: rgba(168, 85, 247, 0.08);
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.2) inset;
+    }
+
+    .cloud-icon-wrap {
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 10px;
+      border-radius: 50%;
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--purple-bright);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+    }
+
+    .cloud-icon-wrap svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .dropzone-main-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 3px;
+    }
+
+    .dropzone-sub-title {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .format-pills {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .format-pill {
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      font-size: 10.5px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    /* Selected File Preview Card */
+    .file-preview-card {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(22, 16, 38, 0.9);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      border-radius: 12px;
+      margin-top: 10px;
+      text-align: left;
+    }
+
+    .file-preview-card.active {
+      display: flex;
+    }
+
+    .file-thumb-img {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .file-meta-box {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .file-name-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-size-text {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .btn-clear-target {
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.25);
+      color: var(--rose-neon);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    /* URL Alternate Input */
+    .url-collapse-wrap {
+      margin-top: 10px;
+    }
+
+    .url-input-container {
+      display: flex;
+      gap: 6px;
+    }
+
+    .url-input-field {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 12px;
+      font-family: var(--font-sans);
+    }
+
+    .url-input-field:focus {
+      outline: none;
+      border-color: var(--purple-neon);
+    }
+
+    .btn-url-paste {
+      padding: 0 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Sensitivity Controls */
+    .sensitivity-row {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: rgba(18, 12, 31, 0.4);
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .sens-title {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .sens-selector-pills {
+      display: flex;
+      gap: 4px;
+    }
+
+    .sens-pill {
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-dim);
+      background: transparent;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .sens-pill input {
+      display: none;
+    }
+
+    .sens-pill.active {
+      color: var(--purple-bright);
+      background: rgba(168, 85, 247, 0.15);
+      border-color: rgba(168, 85, 247, 0.35);
+    }
+
+    /* Submit Button */
+    .btn-terminal-submit {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+      color: #fff;
+      border: none;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4);
+      transition: all 0.2s ease;
+    }
+
+    .btn-terminal-submit:hover {
+      background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    }
+
+    .btn-terminal-submit.scanning {
+      pointer-events: none;
+      background: #1e1533;
+      border: 1px solid var(--purple-neon);
+      color: var(--purple-bright);
+    }
+
+    /* ================================================= */
+    /* BOTTOM FLOATING FEATURE DOCK                      */
+    /* ================================================= */
+    .dock-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 12px 22px;
+      background: rgba(14, 10, 24, 0.75);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      margin-bottom: 0;
+    }
+
+    .dock-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dock-icon-box {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: rgba(168, 85, 247, 0.1);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--purple-bright);
+      flex-shrink: 0;
+    }
+
+    .dock-icon-box svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .dock-text h4 {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1px;
+    }
+
+    .dock-text p {
+      font-size: 11.5px;
+      color: var(--text-dim);
+    }
+
+    /* ================================================= */
+    /* INVESTIGATION RESULTS FULLSCREEN OVERLAY MODAL    */
+    /* (Keeps main page free from vertical scroll)       */
+    /* ================================================= */
+    .results-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 4, 12, 0.94);
+      backdrop-filter: blur(18px);
+      z-index: 999;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px 20px;
+      overflow-y: auto;
+      animation: modal-fade 0.25s ease-out;
+    }
+
+    @keyframes modal-fade {
+      from { opacity: 0; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .results-modal-box {
+      width: 100%;
+      max-width: 1060px;
+      background: rgba(14, 10, 24, 0.95);
+      border: 1px solid var(--purple-neon);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(168, 85, 247, 0.2);
+    }
+
+    .results-modal-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .btn-close-overlay {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      color: #fda4af;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-close-overlay:hover {
+      background: rgba(244, 63, 94, 0.25);
+      color: #fff;
+    }
+
+    /* Query Dossier Banner */
+    .dossier-banner {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 16px 20px;
+      border-radius: 14px;
+      background: rgba(18, 12, 31, 0.9);
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+
+    .dossier-preview-box {
+      width: 70px;
+      height: 70px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid var(--purple-neon);
+      flex-shrink: 0;
+      background: #000;
+    }
+
+    .dossier-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .dossier-info-box {
+      flex: 1;
+      min-width: 240px;
+    }
+
+    .dossier-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--purple-bright);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+    }
+
+    .dossier-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .dossier-tag-pills {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .tag-chip {
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    .tag-chip-hash {
+      color: var(--purple-bright);
+      background: rgba(168, 85, 247, 0.12);
+      border-color: rgba(168, 85, 247, 0.3);
+      cursor: pointer;
+    }
+
+    /* Matches Grid */
+    .matches-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .match-card {
+      background: rgba(18, 12, 31, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .match-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--purple-neon);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+    }
+
+    .match-card.is-exact {
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+
+    .match-card-img-wrap {
+      height: 160px;
+      background: #000;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .match-card-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .match-badge-tag {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 3px 8px;
+      border-radius: 5px;
+      font-size: 9.5px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+    }
+
+    .badge-emerald {
+      background: rgba(16, 185, 129, 0.9);
+      color: #fff;
+    }
+
+    .badge-cyan {
+      background: rgba(14, 165, 233, 0.9);
+      color: #fff;
+    }
+
+    .badge-amber {
+      background: rgba(245, 158, 11, 0.9);
+      color: #fff;
+    }
+
+    .match-card-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    .match-filename {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 6px;
+    }
+
+    .match-sim-bar {
+      height: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .match-sim-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #7c3aed, #a855f7);
+    }
+
+    .match-sim-fill.exact {
+      background: linear-gradient(90deg, #059669, #10b981);
+    }
+
+    .match-card-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .btn-card-action {
+      flex: 1;
+      padding: 6px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .btn-card-action:hover {
+      background: rgba(168, 85, 247, 0.2);
+      border-color: var(--purple-neon);
+      color: #fff;
+    }
+
+    /* No Match Panel */
+    .no-match-panel {
+      background: rgba(18, 12, 31, 0.85);
+      border: 1px dashed rgba(245, 158, 11, 0.35);
+      border-radius: 16px;
+      padding: 34px 20px;
+      text-align: center;
+    }
+
+    .no-match-panel svg {
+      width: 40px;
+      height: 40px;
+      stroke: var(--amber-neon);
+      margin-bottom: 10px;
+    }
+
+    .no-match-panel h3 {
+      font-size: 16px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .no-match-panel p {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      max-width: 480px;
+      margin: 0 auto 16px;
+    }
+
+    /* Web Results Grid */
+    .web-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+    }
+
+    .web-card {
+      background: rgba(18, 12, 31, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .btn-launch-engine {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      color: var(--purple-bright);
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      margin-top: 12px;
+    }
+
+    .btn-launch-engine:hover {
+      background: var(--purple-main);
+      color: #fff;
+    }
+
+    /* Compare Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 3, 10, 0.85);
+      backdrop-filter: blur(12px);
+      z-index: 1001;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.active {
+      display: flex;
+    }
+
+    .modal-window {
+      background: #0f0a1c;
+      border: 1px solid var(--purple-neon);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 760px;
+      padding: 20px;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .modal-pane {
+      background: rgba(22, 16, 38, 0.8);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .modal-pane img {
+      max-width: 100%;
+      height: 200px;
+      object-fit: contain;
+      border-radius: 6px;
+      background: #000;
+    }
+
+    @media (max-width: 900px) {
+      html, body, .main-wrap {
+        height: auto;
+        max-height: none;
+        overflow-y: auto;
+      }
+      .hero-container {
+        grid-template-columns: 1fr;
+      }
+      .dock-container {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient Glow Effects -->
+  <div class="bg-canvas">
+    <div class="bg-glow-top"></div>
+    <div class="bg-glow-bottom"></div>
+    <div class="bg-glow-right"></div>
+    <div class="bg-horizon-arc"></div>
+  </div>
+
+  <div class="main-wrap">
+    <!-- Alerts / Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts-wrap">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category if category in ['success', 'warning', 'error', 'info'] else 'info' }}">
+              <div>{{ message }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- ================= HERO SECTION ================= -->
+    <div class="hero-container" id="investigate-section">
+      <!-- Left Column: Title & Features -->
+      <div class="hero-left">
+        <div class="brand-bracket-wrap">
+          <h1 class="hero-main-title">DarkEye</h1>
+        </div>
+        <h2 class="hero-tagline">A Reverse Image Investigation Tool</h2>
+        <p class="hero-description">
+          Find the origin, context, and online presence of an image using reverse image search and OSINT techniques.
+        </p>
+
+        <!-- 4 Feature Highlights Quad -->
+        <div class="features-quad">
+          <div class="feature-item">
+            <div class="feature-icon-circle">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+            <div class="feature-label">Reverse<br>Image Search</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon-circle">
+              <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+            </div>
+            <div class="feature-label">OSINT<br>Intelligence</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon-circle">
+              <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </div>
+            <div class="feature-label">Source &amp;<br>Related Links</div>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon-circle">
+              <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <div class="feature-label">Image<br>Verification</div>
+          </div>
+        </div>
+
+        <!-- Call to Action Buttons -->
+        <div class="hero-buttons">
+          <button type="button" class="btn-hero-primary" onclick="document.getElementById('file-input').click()">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Investigate Image &rarr;
+          </button>
+          <a href="https://github.com" target="_blank" class="btn-hero-secondary">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path></svg>
+            View on GitHub
+          </a>
+        </div>
+      </div>
+
+      <!-- Right Column: Interactive Upload Card -->
+      <div class="hero-right">
+        <div class="terminal-outer-card">
+          <form id="investigate-form" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="search_type" id="search_type_input" value="{{ search_type or 'local' }}">
+
+            <!-- Mode Selector Switch -->
+            <div class="terminal-mode-switch">
+              <button type="button" class="term-mode-tab {% if (search_type or 'local') == 'local' %}active{% endif %}" data-mode="local">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                Local Dataset Forensics
+              </button>
+              <button type="button" class="term-mode-tab {% if search_type == 'web' %}active{% endif %}" data-mode="web">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                Global OSINT Web
+              </button>
+            </div>
+
+            <!-- Dashed Dropzone -->
+            <div class="dropzone-box" id="dropzone-box">
+              <div class="cloud-icon-wrap">
+                <svg viewBox="0 0 24 24">
+                  <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+                  <polyline points="12 13 12 8 9 11"></polyline>
+                  <line x1="12" y1="8" x2="15" y2="11"></line>
+                </svg>
+              </div>
+              <div class="dropzone-main-title">Upload an Image</div>
+              <div class="dropzone-sub-title">Drag &amp; drop an image here or click to browse</div>
+              <div class="format-pills">
+                <span class="format-pill">JPG</span>
+                <span class="format-pill">PNG</span>
+                <span class="format-pill">WEBP</span>
+                <span class="format-pill">&le; 10MB</span>
+                <span class="format-pill" style="color: var(--purple-bright);">Ctrl + V</span>
+              </div>
+              <input type="file" name="file" id="file-input" accept="image/*">
+            </div>
+
+            <!-- File Selected Preview Card -->
+            <div class="file-preview-card" id="file-preview-card">
+              <img src="" alt="Probe target" id="preview-img-thumb" class="file-thumb-img">
+              <div class="file-meta-box">
+                <div class="file-name-text" id="preview-name-text">target.jpg</div>
+                <div class="file-size-text" id="preview-size-text">0 KB</div>
+              </div>
+              <button type="button" class="btn-clear-target" id="btn-clear-target" title="Remove target">&times;</button>
+            </div>
+
+            <!-- Image URL Input -->
+            <div class="url-collapse-wrap">
+              <div class="url-input-container">
+                <input type="text" name="image_url" id="image_url_field" class="url-input-field" placeholder="Or paste public image URL...">
+                <button type="button" class="btn-url-paste" id="btn-quick-paste">Paste</button>
+              </div>
+            </div>
+
+            <!-- Local Forensic Sensitivity Controls -->
+            <div class="sensitivity-row" id="sensitivity-row" style="{% if search_type == 'web' %}display: none;{% endif %}">
+              <span class="sens-title">Forensic Sensitivity:</span>
+              <div class="sens-selector-pills">
+                <label class="sens-pill {% if threshold == 8 %}active{% endif %}">
+                  <input type="radio" name="threshold" value="8" {% if threshold == 8 %}checked{% endif %}>
+                  Strict (&Delta;&le;8)
+                </label>
+                <label class="sens-pill {% if (threshold or 12) == 12 %}active{% endif %}">
+                  <input type="radio" name="threshold" value="12" {% if (threshold or 12) == 12 %}checked{% endif %}>
+                  Balanced (&Delta;&le;12)
+                </label>
+                <label class="sens-pill {% if threshold == 16 %}active{% endif %}">
+                  <input type="radio" name="threshold" value="16" {% if threshold == 16 %}checked{% endif %}>
+                  Permissive (&Delta;&le;16)
+                </label>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn-terminal-submit" id="btn-submit-main">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+              <span id="btn-submit-label">{{ 'Launch Web Investigation' if search_type == 'web' else 'Investigate Target' }}</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= BOTTOM FEATURE DOCK ================= -->
+    <div class="dock-container" id="tools-section">
+      <div class="dock-item">
+        <div class="dock-icon-box">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+        </div>
+        <div class="dock-text">
+          <h4>Reverse Search</h4>
+          <p>Find similar or matching images</p>
+        </div>
+      </div>
+
+      <div class="dock-item">
+        <div class="dock-icon-box">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+        </div>
+        <div class="dock-text">
+          <h4>Context Analysis</h4>
+          <p>Discover source and usage</p>
+        </div>
+      </div>
+
+      <div class="dock-item">
+        <div class="dock-icon-box">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><polyline points="9 12 11 14 15 10"></polyline></svg>
+        </div>
+        <div class="dock-text">
+          <h4>OSINT Ready</h4>
+          <p>Support for open-source investigations</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= INVESTIGATION CASE RESULTS OVERLAY ================= -->
+    {% if query_preview or local_results or search_urls %}
+      <div class="results-overlay" id="results-overlay">
+        <div class="results-modal-box">
+          <div class="results-modal-top">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <h2 style="font-size: 18px; font-weight: 700; color: #fff;">DarkEye Investigation Report</h2>
+            </div>
+            <button type="button" class="btn-close-overlay" onclick="closeResultsOverlay()">
+              &times; Close Report
+            </button>
+          </div>
+
+          <!-- Target Case Dossier Banner -->
+          <div class="dossier-banner">
+            {% if query_preview %}
+              <div class="dossier-preview-box">
+                <img src="{{ query_preview }}" alt="Target Query Probe">
+              </div>
+            {% endif %}
+            <div class="dossier-info-box">
+              <div class="dossier-label">Forensic Case Dossier</div>
+              <div class="dossier-title">
+                Target Analyzed
+                {% if (search_type or 'local') == 'local' and local_results %}
+                  <span style="font-size: 12px; font-weight: 700; color: #10b981; background: rgba(16, 185, 129, 0.15); padding: 3px 8px; border-radius: 6px;">
+                    {{ local_results|length }} Candidate(s) Verified
+                  </span>
+                {% elif (search_type or 'local') == 'local' and not local_results %}
+                  <span style="font-size: 12px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 6px;">
+                    0 Matches Found
+                  </span>
+                {% endif %}
+              </div>
+              <div class="dossier-tag-pills">
+                <span class="tag-chip">Mode: <strong style="color: #fff;">{{ 'Local Forensics' if (search_type or 'local') == 'local' else 'Web OSINT' }}</strong></span>
+                {% if query_phash %}
+                  <span class="tag-chip tag-chip-hash" onclick="copyHash('{{ query_phash }}')" title="Click to copy hash">
+                    pHash: <strong>#{{ query_phash }}</strong>
+                  </span>
+                {% endif %}
+                <span class="tag-chip">Database: <strong>{{ dataset_count }} Targets</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ================= LOCAL RESULTS ================= -->
+          {% if search_type == 'local' and local_results %}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <h3 style="font-size: 16px; color: #fff;">Identified Target Matches</h3>
+              <span style="font-size: 11px; font-family: var(--font-mono); color: var(--text-dim);">
+                Threshold: &Delta; &le; {{ threshold or 12 }} bits
+              </span>
+            </div>
+
+            <div class="matches-grid">
+              {% for r in local_results %}
+                <div class="match-card {% if r.distance == 0 %}is-exact{% endif %}">
+                  <div class="match-card-img-wrap" onclick="openModal('{{ query_preview }}', '{{ r.url }}', '{{ r.filename }}', '{{ r.similarity_pct }}%', '{{ r.distance }}')">
+                    <img src="{{ r.url }}" alt="{{ r.filename }}" loading="lazy">
+                    <div class="match-badge-tag badge-{{ r.tag_color }}">{{ r.tag }}</div>
+                  </div>
+
+                  <div class="match-card-body">
+                    <div>
+                      <div class="match-filename" title="{{ r.filename }}">{{ r.filename }}</div>
+                      <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: var(--font-mono); color: var(--purple-bright);">
+                        <span>{{ r.similarity_pct }}% Match</span>
+                        <span style="color: var(--text-dim);">&Delta; {{ r.distance }} bits</span>
+                      </div>
+                      <div class="match-sim-bar">
+                        <div class="match-sim-fill {% if r.distance == 0 %}exact{% endif %}" style="width: {{ r.similarity_pct }}%;"></div>
+                      </div>
+                    </div>
+
+                    <div class="match-card-actions">
+                      <a href="{{ r.url }}" target="_blank" class="btn-card-action">Inspect</a>
+                      <button type="button" class="btn-card-action" onclick="openModal('{{ query_preview }}', '{{ r.url }}', '{{ r.filename }}', '{{ r.similarity_pct }}%', '{{ r.distance }}')">Compare</button>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% elif search_type == 'local' and not local_results %}
+            <!-- NO MATCH IDENTIFIED PANEL -->
+            <div class="no-match-panel">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+              <h3>No Matching Target in Local Database</h3>
+              <p>The query probe does not match any indexed file in <code>web/static/dataset/</code>. All database candidates exceeded the confidence threshold (&Delta; &le; {{ threshold or 12 }} bits).</p>
+              <button type="button" class="btn-hero-primary" onclick="switchToWebSearch()" style="margin: 0 auto;">
+                Search Web via Global OSINT &rarr;
+              </button>
+            </div>
+          {% endif %}
+
+          <!-- ================= WEB OSINT RESULTS ================= -->
+          {% if search_type == 'web' and search_urls %}
+            <div style="background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <div style="font-size: 12px; font-family: var(--font-mono); color: var(--purple-bright); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 600px;">
+                <span style="color: var(--text-dim);">PROBE CDN URL:</span>
+                <a href="{{ public_url }}" target="_blank" style="color: #fff; text-decoration: underline; margin-left: 6px;">{{ public_url }}</a>
+              </div>
+              <button type="button" class="btn-card-action" onclick="copyHash('{{ public_url }}')" style="flex: initial; padding: 5px 12px;">Copy Link</button>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+              <h3 style="font-size: 16px; color: #fff;">🌐 Multi-Engine OSINT Dossiers</h3>
+              <button type="button" class="btn-hero-primary" onclick="launchAllEngines()">Launch All 4 Engines in Tabs</button>
+            </div>
+
+            <div class="web-grid">
+              <div class="web-card">
+                <div>
+                  <h4 style="font-size: 14px; color: #fff; margin-bottom: 4px;">Google Lens</h4>
+                  <p style="font-size: 11.5px; color: var(--text-dim);">Deep multi-modal visual recognition indexing web pages.</p>
+                </div>
+                <a href="{{ search_urls.get('Google Lens', '#') }}" target="_blank" class="btn-launch-engine engine-tab-link">Launch &rarr;</a>
+              </div>
+              <div class="web-card">
+                <div>
+                  <h4 style="font-size: 14px; color: #fff; margin-bottom: 4px;">Bing Visual</h4>
+                  <p style="font-size: 11.5px; color: var(--text-dim);">Accurate detection for cropped objects and landmarks.</p>
+                </div>
+                <a href="{{ search_urls.get('Bing Visual Search', '#') }}" target="_blank" class="btn-launch-engine engine-tab-link">Launch &rarr;</a>
+              </div>
+              <div class="web-card">
+                <div>
+                  <h4 style="font-size: 14px; color: #fff; margin-bottom: 4px;">Yandex Images</h4>
+                  <p style="font-size: 11.5px; color: var(--text-dim);">Premier search engine for facial and identity OSINT.</p>
+                </div>
+                <a href="{{ search_urls.get('Yandex Images', '#') }}" target="_blank" class="btn-launch-engine engine-tab-link">Launch &rarr;</a>
+              </div>
+              <div class="web-card">
+                <div>
+                  <h4 style="font-size: 14px; color: #fff; margin-bottom: 4px;">TinEye</h4>
+                  <p style="font-size: 11.5px; color: var(--text-dim);">Tracks earliest crawls and historical duplicate sources.</p>
+                </div>
+                <a href="{{ search_urls.get('TinEye Reverse Search', '#') }}" target="_blank" class="btn-launch-engine engine-tab-link">Launch &rarr;</a>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Compare Modal -->
+    <div class="modal-backdrop" id="compare-modal">
+      <div class="modal-window">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <h3 style="font-size: 15px; color: #fff;">Cross-Comparison Investigation</h3>
+          <button type="button" style="background: none; border: none; color: #fff; font-size: 20px; cursor: pointer;" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-grid">
+          <div class="modal-pane">
+            <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-bottom: 6px;">TARGET PROBE</div>
+            <img id="modal-probe-img" src="" alt="Query Target">
+          </div>
+          <div class="modal-pane">
+            <div style="font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-bottom: 6px;" id="modal-match-meta">MATCHED CANDIDATE</div>
+            <img id="modal-candidate-img" src="" alt="Matched Candidate">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Mode Switcher ----------
+    const modeTabs = document.querySelectorAll('.term-mode-tab');
+    const searchTypeInput = document.getElementById('search_type_input');
+    const btnSubmitLabel = document.getElementById('btn-submit-label');
+    const sensRow = document.getElementById('sensitivity-row');
+
+    modeTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        modeTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const mode = tab.dataset.mode;
+        searchTypeInput.value = mode;
+
+        if (mode === 'web') {
+          btnSubmitLabel.textContent = 'Launch Web Investigation';
+          if (sensRow) sensRow.style.display = 'none';
+        } else {
+          btnSubmitLabel.textContent = 'Investigate Target';
+          if (sensRow) sensRow.style.display = 'flex';
+        }
+      });
+    });
+
+    // ---------- Dropzone & File Preview ----------
+    const dropzoneBox = document.getElementById('dropzone-box');
+    const fileInput = document.getElementById('file-input');
+    const filePreviewCard = document.getElementById('file-preview-card');
+    const previewImgThumb = document.getElementById('preview-img-thumb');
+    const previewNameText = document.getElementById('preview-name-text');
+    const previewSizeText = document.getElementById('preview-size-text');
+    const btnClearTarget = document.getElementById('btn-clear-target');
+    const imageUrlField = document.getElementById('image_url_field');
+
+    dropzoneBox.addEventListener('click', () => fileInput.click());
+
+    ['dragenter', 'dragover'].forEach(name => {
+      dropzoneBox.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzoneBox.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+      dropzoneBox.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropzoneBox.classList.remove('dragover');
+      });
+    });
+
+    dropzoneBox.addEventListener('drop', (e) => {
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        attachFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        attachFile(e.target.files[0]);
+      }
+    });
+
+    function attachFile(file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file!');
+        return;
+      }
+      previewNameText.textContent = file.name;
+      previewSizeText.textContent = (file.size / 1024).toFixed(1) + ' KB';
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImgThumb.src = e.target.result;
+        filePreviewCard.classList.add('active');
+        dropzoneBox.style.display = 'none';
+        imageUrlField.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    btnClearTarget.addEventListener('click', (e) => {
+      e.stopPropagation();
+      fileInput.value = '';
+      previewImgThumb.src = '';
+      filePreviewCard.classList.remove('active');
+      dropzoneBox.style.display = 'block';
+    });
+
+    // Global Paste (Ctrl+V)
+    window.addEventListener('paste', (e) => {
+      const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+      for (const item of items) {
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          const file = new File([blob], "clipboard-probe-" + Date.now() + ".png", { type: blob.type });
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          fileInput.files = dt.files;
+          attachFile(file);
+          break;
+        } else if (item.kind === 'string' && item.type === 'text/plain') {
+          item.getAsString(url => {
+            if (url.startsWith('http')) {
+              imageUrlField.value = url;
+            }
+          });
+        }
+      }
+    });
+
+    // Quick Paste URL Button
+    document.getElementById('btn-quick-paste').addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          imageUrlField.value = text;
+        }
+      } catch (err) {}
+    });
+
+    // Sensitivity Pills
+    const sensPills = document.querySelectorAll('.sens-pill');
+    sensPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        sensPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const r = pill.querySelector('input');
+        if (r) r.checked = true;
+      });
+    });
+
+    // Submit Animation
+    const form = document.getElementById('investigate-form');
+    const submitBtn = document.getElementById('btn-submit-main');
+    form.addEventListener('submit', () => {
+      submitBtn.classList.add('scanning');
+      document.getElementById('btn-submit-label').textContent = 'Analyzing Signatures...';
+    });
+
+    // Close Results Overlay
+    function closeResultsOverlay() {
+      const overlay = document.getElementById('results-overlay');
+      if (overlay) overlay.style.display = 'none';
+    }
+
+    // Compare Modal
+    const modal = document.getElementById('compare-modal');
+    const modalProbeImg = document.getElementById('modal-probe-img');
+    const modalCandidateImg = document.getElementById('modal-candidate-img');
+    const modalMatchMeta = document.getElementById('modal-match-meta');
+
+    function openModal(probeSrc, candSrc, name, score, dist) {
+      modalProbeImg.src = probeSrc || candSrc;
+      modalCandidateImg.src = candSrc;
+      modalMatchMeta.textContent = `${name} (${score} • Δ ${dist} bits)`;
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      modal.classList.remove('active');
+    }
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    function switchToWebSearch() {
+      closeResultsOverlay();
+      const webTab = document.querySelector('.term-mode-tab[data-mode="web"]');
+      if (webTab) webTab.click();
+    }
+
+    function copyHash(text) {
+      navigator.clipboard.writeText(text);
+    }
+
+    function launchAllEngines() {
+      const links = document.querySelectorAll('.engine-tab-link');
+      links.forEach((link, idx) => {
+        if (link.href && link.href !== '#') {
+          setTimeout(() => {
+            window.open(link.href, '_blank');
+          }, idx * 250);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

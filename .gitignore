@@ -1,0 +1,22 @@
+# Virtual Environment
+.venv/
+env/
+venv/
+ENV/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pkl
+
+# Uploads staging (keep directory structure with .gitkeep)
+web/uploads/*
+!web/uploads/.gitkeep
+
+# System & IDE artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+

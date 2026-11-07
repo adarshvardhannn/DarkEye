@@ -1,0 +1,205 @@
+{
+  "version": 2,
+  "images": [
+    {
+      "rel_path": "dataset/1.jpg",
+      "phash": "eb8e8538556538cd",
+      "dhash": "e7ab4b4991938b8f"
+    },
+    {
+      "rel_path": "dataset/10.jpg",
+      "phash": "9b9dbcc643c45ca2",
+      "dhash": "323232514959d4cd"
+    },
+    {
+      "rel_path": "dataset/11.jpg",
+      "phash": "cf7b3c38f130c8c1",
+      "dhash": "1f614148d0412406"
+    },
+    {
+      "rel_path": "dataset/12.jpg",
+      "phash": "b9c666998d493762",
+      "dhash": "f2ecdcd69696939e"
+    },
+    {
+      "rel_path": "dataset/13.jpg",
+      "phash": "948d3cc84ddb4f38",
+      "dhash": "b2be76d4a4a5ac8e"
+    },
+    {
+      "rel_path": "dataset/14.jpg",
+      "phash": "f3f3c4cc46de0d80",
+      "dhash": "048e5a1989123222"
+    },
+    {
+      "rel_path": "dataset/15.jpg",
+      "phash": "e954c6aca5dad312",
+      "dhash": "06869a939713336b"
+    },
+    {
+      "rel_path": "dataset/16.jpg",
+      "phash": "b2d1dedb24999309",
+      "dhash": "f8cd9e8f0f493b2f"
+    },
+    {
+      "rel_path": "dataset/17.jpg",
+      "phash": "b67299c99c70c596",
+      "dhash": "ac8c8c0d2f520c7c"
+    },
+    {
+      "rel_path": "dataset/18.jpg",
+      "phash": "b19fa0ad4875c65c",
+      "dhash": "cede5c590a4e8e9d"
+    },
+    {
+      "rel_path": "dataset/19.jpg",
+      "phash": "bcc2c28e6d3cc9b4",
+      "dhash": "0f14163727372f16"
+    },
+    {
+      "rel_path": "dataset/2.jpg",
+      "phash": "bd92106df8f1e309",
+      "dhash": "34242c1e524e162e"
+    },
+    {
+      "rel_path": "dataset/20.jpg",
+      "phash": "85847673c9cd1e36",
+      "dhash": "920ef4d2d32c5c08"
+    },
+    {
+      "rel_path": "dataset/20a (1).jpg",
+      "phash": "bdd025f4c167d8c1",
+      "dhash": "98beb55b98367676"
+    },
+    {
+      "rel_path": "dataset/20a (10).jpg",
+      "phash": "ede592e61a81598e",
+      "dhash": "304e961323836670"
+    },
+    {
+      "rel_path": "dataset/20a (11).jpg",
+      "phash": "a6e461c389da99d9",
+      "dhash": "e5a6a4e5e6e5e5e7"
+    },
+    {
+      "rel_path": "dataset/20a (12).jpg",
+      "phash": "b8b44bb363936193",
+      "dhash": "9db6b69d9e1b0ba3"
+    },
+    {
+      "rel_path": "dataset/20a (13).jpg",
+      "phash": "bfc8dd221bdce0c0",
+      "dhash": "3438343a7d4f767c"
+    },
+    {
+      "rel_path": "dataset/20a (14).jpg",
+      "phash": "ece485421f78f923",
+      "dhash": "464687230b0b2f37"
+    },
+    {
+      "rel_path": "dataset/20a (15).jpg",
+      "phash": "ecb54b95668864ec",
+      "dhash": "666b2727270703a3"
+    },
+    {
+      "rel_path": "dataset/20a (16).jpg",
+      "phash": "b29d41e887e0c78f",
+      "dhash": "9e3a3e3c3c0c9d9e"
+    },
+    {
+      "rel_path": "dataset/20a (17).jpg",
+      "phash": "9869967669b630c7",
+      "dhash": "b2b2b2b2b2acece8"
+    },
+    {
+      "rel_path": "dataset/20a (18).jpg",
+      "phash": "a88f4cb8b05fe2a3",
+      "dhash": "b773cb179f9f9c89"
+    },
+    {
+      "rel_path": "dataset/20a (19).jpg",
+      "phash": "c642eecdcc2b3931",
+      "dhash": "c3cc8dc1d49a2f27"
+    },
+    {
+      "rel_path": "dataset/20a (2).jpg",
+      "phash": "b0cce6e0c95b329e",
+      "dhash": "d666361b9e9c8c8c"
+    },
+    {
+      "rel_path": "dataset/20a (20).jpg",
+      "phash": "995aa4146ea5b67a",
+      "dhash": "32fa9a3ab99a8aaa"
+    },
+    {
+      "rel_path": "dataset/20a (3).jpg",
+      "phash": "a6d6492493cb7c93",
+      "dhash": "4d4dcd0d4d170f1f"
+    },
+    {
+      "rel_path": "dataset/20a (4).jpg",
+      "phash": "98c18667727513ed",
+      "dhash": "cab6b2b8bbb6b6b1"
+    },
+    {
+      "rel_path": "dataset/20a (5).jpg",
+      "phash": "8829222ba73fdd33",
+      "dhash": "db97b373f3b3e7cc"
+    },
+    {
+      "rel_path": "dataset/20a (6).jpg",
+      "phash": "a6c738319e4d31d3",
+      "dhash": "e4e4cc6ccc8e3f3f"
+    },
+    {
+      "rel_path": "dataset/20a (7).jpg",
+      "phash": "e61669b433e9164b",
+      "dhash": "8ca52d4dcd061343"
+    },
+    {
+      "rel_path": "dataset/20a (8).jpg",
+      "phash": "e17996634b9a4cd8",
+      "dhash": "c896b28383ceccc6"
+    },
+    {
+      "rel_path": "dataset/20a (9).jpg",
+      "phash": "b9865ee9871a6127",
+      "dhash": "ccd4ccccd6133311"
+    },
+    {
+      "rel_path": "dataset/3.jpg",
+      "phash": "c4f57a833b5067c8",
+      "dhash": "f4e606f4e2d4b021"
+    },
+    {
+      "rel_path": "dataset/4.jpg",
+      "phash": "f921c6c28f869cda",
+      "dhash": "4f9b1b1313914d61"
+    },
+    {
+      "rel_path": "dataset/5.jpg",
+      "phash": "e5ab3ad69cf88a10",
+      "dhash": "c7c3c303c2840400"
+    },
+    {
+      "rel_path": "dataset/6.jpg",
+      "phash": "98673a97ca1d7063",
+      "dhash": "f1cc92b2dcb43331"
+    },
+    {
+      "rel_path": "dataset/7.jpg",
+      "phash": "adb7f2c3070cdc0c",
+      "dhash": "5e9636337333b3b3"
+    },
+    {
+      "rel_path": "dataset/8.jpg",
+      "phash": "bc9c9b716c0ee1c1",
+      "dhash": "3639262686970fdf"
+    },
+    {
+      "rel_path": "dataset/9.jpg",
+      "phash": "cd9572e634f20399",
+      "dhash": "e672f2b2f3c3a393"
+    }
+  ]
+}
